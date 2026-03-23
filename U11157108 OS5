@@ -1,0 +1,175 @@
+#include "pico/stdlib.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include <stdio.h>
+
+#include "BlinkAgent.h"
+#include "BlinkWorker.h"
+#include "BlinkHeavy.h"
+
+// Standard Task priority
+#define TASK_PRIORITY       ( tskIDLE_PRIORITY + 1UL )
+
+// LED PAD to use
+#define LED_PAD             2
+#define LED1_PAD            3
+#define LED2_PAD            4
+#define LED3_PAD            5
+#define LED4_PAD            6
+#define LED5_PAD            7
+#define LED6_PAD            8
+#define LED7_PAD            9
+#define LED8_PAD            10
+#define LED9_PAD            11
+#define LED10_PAD           12
+#define LED11_PAD           13
+#define LED12_PAD           14
+#define LED13_PAD           15
+#define LED14_PAD           16
+#define LED15_PAD           17
+#define LED16_PAD           18
+#define LED17_PAD           19
+#define LED18_PAD           20
+#define LED19_PAD           21
+#define LED20_PAD           22 // 新增 LED 20
+
+// Function to display runtime stats
+void runTimeStats(){
+    TaskStatus_t *pxTaskStatusArray;
+    volatile UBaseType_t uxArraySize, x;
+    unsigned long ulTotalRunTime;
+
+    // Get number of tasks
+    uxArraySize = uxTaskGetNumberOfTasks();
+    printf("Number of tasks %d\n", uxArraySize);
+
+    // Allocate a TaskStatus_t structure for each task.
+    pxTaskStatusArray = (TaskStatus_t *)pvPortMalloc( uxArraySize * sizeof( TaskStatus_t ) );
+
+    if( pxTaskStatusArray != NULL ){
+        // Generate raw status information about each task.
+        uxArraySize = uxTaskGetSystemState( pxTaskStatusArray,
+                                             uxArraySize,
+                                             &ulTotalRunTime );
+
+        // Print stats
+        for( x = 0; x < uxArraySize; x++ )
+        {
+            printf("Task: %d \t cPri:%d \t bPri:%d \t hw:%d \t%s\n",
+                   pxTaskStatusArray[ x ].xTaskNumber ,
+                   pxTaskStatusArray[ x ].uxCurrentPriority ,
+                   pxTaskStatusArray[ x ].uxBasePriority ,
+                   pxTaskStatusArray[ x ].usStackHighWaterMark ,
+                   pxTaskStatusArray[ x ].pcTaskName
+            );
+        }
+
+        // Free array
+        vPortFree( pxTaskStatusArray );
+    } else {
+        printf("Failed to allocate space for stats\n");
+    }
+
+    // Get heap allocation information
+    HeapStats_t heapStats;
+    vPortGetHeapStats(&heapStats);
+    printf("HEAP avl: %d, blocks %d, alloc: %d, free: %d\n",
+           heapStats.xAvailableHeapSpaceInBytes,
+           heapStats.xNumberOfFreeBlocks,
+           heapStats.xNumberOfSuccessfulAllocations,
+           heapStats.xNumberOfSuccessfulFrees
+    );
+}
+
+/***
+ * Main task to blink external LED
+ * @param params - unused
+ */
+void mainTask(void *params){
+    BlinkAgent blink(LED_PAD);
+    BlinkWorker worker1(LED1_PAD);
+    BlinkHeavy worker2(LED2_PAD);
+    BlinkWorker worker3(LED3_PAD);
+    BlinkHeavy worker4(LED4_PAD);
+
+    // 新增更多 worker 任務來控制更多 LED
+    BlinkWorker worker5(LED5_PAD);
+    BlinkHeavy worker6(LED6_PAD);
+    BlinkWorker worker7(LED7_PAD);
+    BlinkHeavy worker8(LED8_PAD);
+    BlinkWorker worker9(LED9_PAD);
+    BlinkHeavy worker10(LED10_PAD);
+    BlinkWorker worker11(LED11_PAD);
+    BlinkHeavy worker12(LED12_PAD);
+    BlinkWorker worker13(LED13_PAD);
+    BlinkHeavy worker14(LED14_PAD);
+    BlinkWorker worker15(LED15_PAD);
+    BlinkHeavy worker16(LED16_PAD);
+    BlinkWorker worker17(LED17_PAD);
+    BlinkHeavy worker18(LED18_PAD);
+    BlinkWorker worker19(LED19_PAD);
+    BlinkHeavy worker20(LED20_PAD); // 新增 LED 20 任務
+
+    printf("Main task started\n");
+
+    // Start the tasks
+    blink.start("Blink", TASK_PRIORITY);
+    worker1.start("Worker 1", TASK_PRIORITY + 1);
+    worker2.start("Worker 2", TASK_PRIORITY + 2);
+    worker3.start("Worker 3", TASK_PRIORITY + 3);
+    worker4.start("Worker 4", TASK_PRIORITY + 4);
+
+    // 啟動所有新增的任務
+    worker5.start("Worker 5", TASK_PRIORITY + 5);
+    worker6.start("Worker 6", TASK_PRIORITY + 6);
+    worker7.start("Worker 7", TASK_PRIORITY + 7);
+    worker8.start("Worker 8", TASK_PRIORITY + 8);
+    worker9.start("Worker 9", TASK_PRIORITY + 9);
+    worker10.start("Worker 10", TASK_PRIORITY + 10);
+    worker11.start("Worker 11", TASK_PRIORITY + 11);
+    worker12.start("Worker 12", TASK_PRIORITY + 12);
+    worker13.start("Worker 13", TASK_PRIORITY + 13);
+    worker14.start("Worker 14", TASK_PRIORITY + 14);
+    worker15.start("Worker 15", TASK_PRIORITY + 15);
+    worker16.start("Worker 16", TASK_PRIORITY + 16);
+    worker17.start("Worker 17", TASK_PRIORITY + 17);
+    worker18.start("Worker 18", TASK_PRIORITY + 18);
+    worker19.start("Worker 19", TASK_PRIORITY + 19);
+    worker20.start("Worker 20", TASK_PRIORITY + 20); // 啟動第 20 顆 LED
+
+    while (true) { // Loop forever
+        runTimeStats();
+        vTaskDelay(3000);  // 每 3 秒顯示一次運行時統計
+    }
+}
+
+/***
+ * Launch the tasks and scheduler
+ */
+void vLaunch( void) {
+    // Start main task
+    TaskHandle_t task;
+    xTaskCreate(mainTask, "MainThread", 500, NULL, TASK_PRIORITY, &task);
+
+    /* Start the tasks and timer running. */
+    vTaskStartScheduler();
+}
+
+/***
+ * Main
+ * @return
+ */
+int main( void )
+{
+    // Setup serial over USB and give a few seconds to settle before we start
+    stdio_init_all();
+    sleep_ms(2000);
+    printf("GO\n");
+
+    // Start tasks and scheduler
+    const char *rtos_name = "FreeRTOS";
+    printf("Starting %s on core 0:\n", rtos_name);
+    vLaunch();
+
+    return 0;
+}
